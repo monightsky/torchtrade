@@ -16,7 +16,7 @@ def simple_feature_fn(df: pd.DataFrame) -> pd.DataFrame:
     df = df.copy().reset_index(drop=False)
     df["features_close"] = df["close"]
     df["features_volume"] = df["volume"]
-    df.dropna(inplace=True)
+    df.fillna(0, inplace=True)
     return df
 
 
@@ -246,7 +246,7 @@ class TestAuxiliaryColumns:
             for col in ["close", "volume", "funding_rate", "basis"]:
                 if col in df.columns:
                     df[f"features_{col}"] = df[col]
-            df.dropna(inplace=True)
+            df.fillna(0, inplace=True)
             return df
 
         sampler = MarketDataObservationSampler(

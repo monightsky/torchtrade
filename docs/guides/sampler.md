@@ -263,7 +263,10 @@ def futures_features(df: pd.DataFrame) -> pd.DataFrame:
 | **Feature processing** | Derived indicators computed from data | RSI, MACD, Bollinger Bands, moving averages |
 | **Both together** | External data + derived features | Funding rate (aux) + funding rate change (derived) |
 
-Without `feature_preprocessing_fn`, auxiliary columns flow through directly as raw features in the observation tensor. With `feature_preprocessing_fn`, you control exactly which columns become `features_*` outputs.
+**Two modes of operation:**
+
+- **Without `feature_preprocessing_fn`**: All columns (OHLCV + auxiliary) flow through directly as raw features. The `features_*` prefix is not required.
+- **With `feature_preprocessing_fn`**: Only columns starting with `features_*` are included. You control exactly which columns become features.
 
 ---
 

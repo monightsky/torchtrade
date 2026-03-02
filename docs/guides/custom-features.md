@@ -11,7 +11,7 @@ There are two ways to enrich observations:
 
 The `feature_preprocessing_fn` parameter in environment configs transforms raw OHLCV data (plus any auxiliary columns) into custom features. This function is called on each resampled timeframe during environment initialization.
 
-**IMPORTANT**: All feature columns must start with `features_` prefix (e.g., `features_close`, `features_rsi_14`). Only columns with this prefix will be included in the observation space.
+**IMPORTANT**: When using `feature_preprocessing_fn`, all feature columns must start with `features_` prefix (e.g., `features_close`, `features_rsi_14`). Only columns with this prefix will be included in the observation space. Without `feature_preprocessing_fn`, raw columns (OHLCV + any auxiliary columns) are used directly as features.
 
 !!! warning "Timeframe Format Matters"
     When specifying `time_frames`, use **canonical forms** to avoid confusion:
@@ -231,7 +231,12 @@ def futures_features(df: pd.DataFrame) -> pd.DataFrame:
     return df
 ```
 
-Without `feature_preprocessing_fn`, auxiliary columns flow through directly as raw features in the observation tensor. See [Auxiliary Data Columns](sampler.md#auxiliary-data-columns) for details.
+**Two modes of operation:**
+
+- **Without `feature_preprocessing_fn`**: All columns (OHLCV + auxiliary) flow through directly as raw features. The `features_*` prefix is not required.
+- **With `feature_preprocessing_fn`**: Only columns starting with `features_*` are included. You control exactly which columns become features.
+
+See [Auxiliary Data Columns](sampler.md#auxiliary-data-columns) for details on how auxiliary columns are resampled and handled.
 
 ---
 
