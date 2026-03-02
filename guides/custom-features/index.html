@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
     
     
       
@@ -1155,6 +1155,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-auxiliary-data-in-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Auxiliary Data in Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#important-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1436,6 +1447,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#using-auxiliary-data-in-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Using Auxiliary Data in Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#important-rules" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1589,8 +1611,13 @@
 <h1 id="feature-engineering">Feature Engineering<a class="headerlink" href="#feature-engineering" title="Permanent link">&para;</a></h1>
 <p>TorchTrade allows you to add custom technical indicators and features to your market observations. This guide shows you how to preprocess your OHLCV data with custom features before it's fed to your policy.</p>
 <h2 id="how-it-works">How It Works<a class="headerlink" href="#how-it-works" title="Permanent link">&para;</a></h2>
-<p>The <code>feature_preprocessing_fn</code> parameter in environment configs transforms raw OHLCV data into custom features. This function is called on each resampled timeframe during environment initialization.</p>
-<p><strong>IMPORTANT</strong>: All feature columns must start with <code>features_</code> prefix (e.g., <code>features_close</code>, <code>features_rsi_14</code>). Only columns with this prefix will be included in the observation space.</p>
+<p>There are two ways to enrich observations:</p>
+<ol>
+<li><strong>Feature processing functions</strong> (<code>feature_preprocessing_fn</code>) — compute derived features from OHLCV data (RSI, MACD, etc.). Covered in this guide.</li>
+<li><strong>Auxiliary data columns</strong> — pass extra columns alongside OHLCV in your DataFrame (funding rate, basis, etc.). See <a href="../sampler/#auxiliary-data-columns">Understanding the Sampler</a>.</li>
+</ol>
+<p>The <code>feature_preprocessing_fn</code> parameter in environment configs transforms raw OHLCV data (plus any auxiliary columns) into custom features. This function is called on each resampled timeframe during environment initialization.</p>
+<p><strong>IMPORTANT</strong>: When using <code>feature_preprocessing_fn</code>, all feature columns must start with <code>features_</code> prefix (e.g., <code>features_close</code>, <code>features_rsi_14</code>). Only columns with this prefix will be included in the observation space. Without <code>feature_preprocessing_fn</code>, raw columns (OHLCV + any auxiliary columns) are used directly as features.</p>
 <div class="admonition warning">
 <p class="admonition-title">Timeframe Format Matters</p>
 <p>When specifying <code>time_frames</code>, use <strong>canonical forms</strong> to avoid confusion:</p>
@@ -1759,9 +1786,40 @@
 </span><span id="__span-4-3"><a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="n">feature_preprocessing_fn</span><span class="o">=</span><span class="p">[</span><span class="n">my_function</span><span class="p">,</span> <span class="n">my_function</span><span class="p">]</span>
 </span></code></pre></div>
 <hr />
+<h2 id="using-auxiliary-data-in-feature-processing">Using Auxiliary Data in Feature Processing<a class="headerlink" href="#using-auxiliary-data-in-feature-processing" title="Permanent link">&para;</a></h2>
+<p>If your DataFrame contains auxiliary columns (funding rate, basis, open interest, etc.), they are available inside <code>feature_preprocessing_fn</code> alongside OHLCV:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="c1"># DataFrame with auxiliary columns</span>
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a>    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;open&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="s2">&quot;volume&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="s2">&quot;funding_rate&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>  <span class="c1"># auxiliary</span>
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="s2">&quot;open_interest&quot;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span> <span class="c1"># auxiliary</span>
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="p">})</span>
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="k">def</span><span class="w"> </span><span class="nf">futures_features</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="c1"># Standard OHLCV features</span>
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_close&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_volume&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span>
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>    <span class="c1"># Features from auxiliary columns</span>
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_funding_rate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;funding_rate&quot;</span><span class="p">]</span>
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_oi_change&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;open_interest&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">pct_change</span><span class="p">()</span>
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="c1"># Features combining OHLCV + auxiliary</span>
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_basis_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;basis&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a>
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a>    <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a>    <span class="k">return</span> <span class="n">df</span>
+</span></code></pre></div>
+<p><strong>Two modes of operation:</strong></p>
+<ul>
+<li><strong>Without <code>feature_preprocessing_fn</code></strong>: All columns (OHLCV + auxiliary) flow through directly as raw features. The <code>features_*</code> prefix is not required.</li>
+<li><strong>With <code>feature_preprocessing_fn</code></strong>: Only columns starting with <code>features_*</code> are included. You control exactly which columns become features.</li>
+</ul>
+<p>See <a href="../sampler/#auxiliary-data-columns">Auxiliary Data Columns</a> for details on how auxiliary columns are resampled and handled.</p>
+<hr />
 <h2 id="important-rules">Important Rules<a class="headerlink" href="#important-rules" title="Permanent link">&para;</a></h2>
 <ol>
-<li><strong>Feature prefix</strong>: All columns MUST start with <code>features_</code> (e.g., <code>features_rsi_14</code>). Columns without this prefix are ignored.</li>
+<li><strong>Feature prefix</strong> (when using <code>feature_preprocessing_fn</code>): All output columns MUST start with <code>features_</code> (e.g., <code>features_rsi_14</code>). Columns without this prefix are ignored. Without a preprocessing function, raw columns (OHLCV + auxiliary) are used directly.</li>
 <li><strong>Handle NaN</strong>: Technical indicators produce NaN at the start. Always call <code>df.fillna(0, inplace=True)</code> (or <code>ffill</code>/<code>bfill</code>).</li>
 <li><strong>Return the DataFrame</strong>: Your function must <code>return df</code>.</li>
 <li><strong>No lookahead bias</strong>: Only use past data. Never use <code>.shift(-1)</code> or future values.</li>
@@ -1861,23 +1919,23 @@
 </tbody>
 </table>
 <h3 id="usage-pattern">Usage Pattern<a class="headerlink" href="#usage-pattern" title="Permanent link">&para;</a></h3>
-<div class="language-python highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">ta</span>
-</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
-</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_indicators</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a>    <span class="c1"># Basic OHLCV</span>
-</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_close&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>
-</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_volume&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span>
-</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a>    <span class="c1"># ... other OHLCV ...</span>
-</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a>
-</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a>    <span class="c1"># Pick indicators from table above</span>
-</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_rsi_14&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">momentum</span><span class="o">.</span><span class="n">RSIIndicator</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span><span class="o">.</span><span class="n">rsi</span><span class="p">()</span>
-</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_sma_20&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">trend</span><span class="o">.</span><span class="n">SMAIndicator</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">sma_indicator</span><span class="p">()</span>
-</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_atr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">volatility</span><span class="o">.</span><span class="n">AverageTrueRange</span><span class="p">(</span>
-</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a>        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;high&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;low&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">14</span>
-</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a>    <span class="p">)</span><span class="o">.</span><span class="n">average_true_range</span><span class="p">()</span>
-</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a>
-</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a>    <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a>    <span class="k">return</span> <span class="n">df</span>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">ta</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="k">def</span><span class="w"> </span><span class="nf">add_indicators</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>    <span class="c1"># Basic OHLCV</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_close&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_volume&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span>
+</span><span id="__span-6-7"><a id="__codelineno-6-7" name="__codelineno-6-7" href="#__codelineno-6-7"></a>    <span class="c1"># ... other OHLCV ...</span>
+</span><span id="__span-6-8"><a id="__codelineno-6-8" name="__codelineno-6-8" href="#__codelineno-6-8"></a>
+</span><span id="__span-6-9"><a id="__codelineno-6-9" name="__codelineno-6-9" href="#__codelineno-6-9"></a>    <span class="c1"># Pick indicators from table above</span>
+</span><span id="__span-6-10"><a id="__codelineno-6-10" name="__codelineno-6-10" href="#__codelineno-6-10"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_rsi_14&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">momentum</span><span class="o">.</span><span class="n">RSIIndicator</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span><span class="o">.</span><span class="n">rsi</span><span class="p">()</span>
+</span><span id="__span-6-11"><a id="__codelineno-6-11" name="__codelineno-6-11" href="#__codelineno-6-11"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_sma_20&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">trend</span><span class="o">.</span><span class="n">SMAIndicator</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span><span class="o">.</span><span class="n">sma_indicator</span><span class="p">()</span>
+</span><span id="__span-6-12"><a id="__codelineno-6-12" name="__codelineno-6-12" href="#__codelineno-6-12"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_atr&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ta</span><span class="o">.</span><span class="n">volatility</span><span class="o">.</span><span class="n">AverageTrueRange</span><span class="p">(</span>
+</span><span id="__span-6-13"><a id="__codelineno-6-13" name="__codelineno-6-13" href="#__codelineno-6-13"></a>        <span class="n">df</span><span class="p">[</span><span class="s2">&quot;high&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;low&quot;</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">],</span> <span class="n">window</span><span class="o">=</span><span class="mi">14</span>
+</span><span id="__span-6-14"><a id="__codelineno-6-14" name="__codelineno-6-14" href="#__codelineno-6-14"></a>    <span class="p">)</span><span class="o">.</span><span class="n">average_true_range</span><span class="p">()</span>
+</span><span id="__span-6-15"><a id="__codelineno-6-15" name="__codelineno-6-15" href="#__codelineno-6-15"></a>
+</span><span id="__span-6-16"><a id="__codelineno-6-16" name="__codelineno-6-16" href="#__codelineno-6-16"></a>    <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-6-17"><a id="__codelineno-6-17" name="__codelineno-6-17" href="#__codelineno-6-17"></a>    <span class="k">return</span> <span class="n">df</span>
 </span></code></pre></div>
 <hr />
 <h2 id="performance-tips">Performance Tips<a class="headerlink" href="#performance-tips" title="Permanent link">&para;</a></h2>

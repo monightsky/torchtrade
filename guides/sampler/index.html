@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.1">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.3">
     
     
       
@@ -893,6 +893,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#auxiliary-data-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auxiliary Data Columns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auxiliary Data Columns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparse-auxiliary-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sparse Auxiliary Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-futures-data-with-funding-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Futures Data with Funding Rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining with Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-auxiliary-columns-vs-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Auxiliary Columns vs Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#key-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1419,6 +1491,78 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#auxiliary-data-columns" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auxiliary Data Columns
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Auxiliary Data Columns">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#how-it-works_1" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How It Works
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#sparse-auxiliary-data" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Sparse Auxiliary Data
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-futures-data-with-funding-rate" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example: Futures Data with Funding Rate
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#combining-with-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Combining with Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#when-to-use-auxiliary-columns-vs-feature-processing" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        When to Use Auxiliary Columns vs Feature Processing
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#key-parameters" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1557,15 +1701,15 @@
 <h2 id="what-is-the-sampler">What Is the Sampler?<a class="headerlink" href="#what-is-the-sampler" title="Permanent link">&para;</a></h2>
 <p>The sampler:</p>
 <ol>
-<li><strong>Resamples</strong> 1-minute OHLCV to multiple timeframes (5m, 15m, 1h)</li>
+<li><strong>Resamples</strong> 1-minute OHLCV (+ optional auxiliary columns) to multiple timeframes (5m, 15m, 1h)</li>
 <li><strong>Applies feature preprocessing</strong> to each timeframe</li>
 <li><strong>Creates sliding windows</strong> of market data</li>
 <li><strong>Prevents lookahead bias</strong> by correct bar indexing</li>
 </ol>
-<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1-Minute Data → Sampler → Multi-Timeframe Observations
-</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                  ├── Resample to timeframes
-</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                  ├── Apply preprocessing
-</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                  └── Create windows
+<div class="language-text highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>1-Minute Data (OHLCV + optional aux) → Sampler → Multi-Timeframe Observations
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>                                          ├── Resample to timeframes
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a>                                          ├── Apply preprocessing
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a>                                          └── Create windows
 </span></code></pre></div>
 <hr />
 <h2 id="basic-usage">Basic Usage<a class="headerlink" href="#basic-usage" title="Permanent link">&para;</a></h2>
@@ -1578,31 +1722,32 @@
 </span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a><span class="c1"># Load your OHLCV data</span>
 </span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="s2">&quot;btcusdt_1m.csv&quot;</span><span class="p">)</span>
 </span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a><span class="c1"># Required columns: timestamp, open, high, low, close, volume</span>
-</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>
-</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a><span class="c1"># Create sampler</span>
-</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="n">sampler</span> <span class="o">=</span> <span class="n">MarketDataObservationSampler</span><span class="p">(</span>
-</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a>    <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
-</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">time_frames</span><span class="o">=</span><span class="p">[</span>
-</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
-</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
-</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
-</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>    <span class="p">],</span>
-</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
-</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">execute_on</span><span class="o">=</span><span class="n">TimeFrame</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
-</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a><span class="p">)</span>
-</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a>
-</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a><span class="c1"># Get observations</span>
-</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="n">obs_dict</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">truncated</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_sequential_observation</span><span class="p">()</span>
-</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a>
-</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a><span class="c1"># obs_dict contains:</span>
-</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1"># {</span>
-</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1">#   &quot;market_data_1Minute&quot;: torch.Tensor([12, num_features]),</span>
-</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1">#   &quot;market_data_5Minute&quot;: torch.Tensor([8, num_features]),</span>
-</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1">#   &quot;market_data_15Minute&quot;: torch.Tensor([8, num_features]),</span>
-</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1"># }</span>
-</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a>
-</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a><span class="c1"># Reset for new episode</span>
-</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="n">sampler</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">random_start</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a><span class="c1"># Optional: additional columns (funding_rate, basis, etc.) are passed through automatically</span>
+</span><span id="__span-1-9"><a id="__codelineno-1-9" name="__codelineno-1-9" href="#__codelineno-1-9"></a>
+</span><span id="__span-1-10"><a id="__codelineno-1-10" name="__codelineno-1-10" href="#__codelineno-1-10"></a><span class="c1"># Create sampler</span>
+</span><span id="__span-1-11"><a id="__codelineno-1-11" name="__codelineno-1-11" href="#__codelineno-1-11"></a><span class="n">sampler</span> <span class="o">=</span> <span class="n">MarketDataObservationSampler</span><span class="p">(</span>
+</span><span id="__span-1-12"><a id="__codelineno-1-12" name="__codelineno-1-12" href="#__codelineno-1-12"></a>    <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+</span><span id="__span-1-13"><a id="__codelineno-1-13" name="__codelineno-1-13" href="#__codelineno-1-13"></a>    <span class="n">time_frames</span><span class="o">=</span><span class="p">[</span>
+</span><span id="__span-1-14"><a id="__codelineno-1-14" name="__codelineno-1-14" href="#__codelineno-1-14"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
+</span><span id="__span-1-15"><a id="__codelineno-1-15" name="__codelineno-1-15" href="#__codelineno-1-15"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
+</span><span id="__span-1-16"><a id="__codelineno-1-16" name="__codelineno-1-16" href="#__codelineno-1-16"></a>        <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
+</span><span id="__span-1-17"><a id="__codelineno-1-17" name="__codelineno-1-17" href="#__codelineno-1-17"></a>    <span class="p">],</span>
+</span><span id="__span-1-18"><a id="__codelineno-1-18" name="__codelineno-1-18" href="#__codelineno-1-18"></a>    <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+</span><span id="__span-1-19"><a id="__codelineno-1-19" name="__codelineno-1-19" href="#__codelineno-1-19"></a>    <span class="n">execute_on</span><span class="o">=</span><span class="n">TimeFrame</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
+</span><span id="__span-1-20"><a id="__codelineno-1-20" name="__codelineno-1-20" href="#__codelineno-1-20"></a><span class="p">)</span>
+</span><span id="__span-1-21"><a id="__codelineno-1-21" name="__codelineno-1-21" href="#__codelineno-1-21"></a>
+</span><span id="__span-1-22"><a id="__codelineno-1-22" name="__codelineno-1-22" href="#__codelineno-1-22"></a><span class="c1"># Get observations</span>
+</span><span id="__span-1-23"><a id="__codelineno-1-23" name="__codelineno-1-23" href="#__codelineno-1-23"></a><span class="n">obs_dict</span><span class="p">,</span> <span class="n">timestamp</span><span class="p">,</span> <span class="n">truncated</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_sequential_observation</span><span class="p">()</span>
+</span><span id="__span-1-24"><a id="__codelineno-1-24" name="__codelineno-1-24" href="#__codelineno-1-24"></a>
+</span><span id="__span-1-25"><a id="__codelineno-1-25" name="__codelineno-1-25" href="#__codelineno-1-25"></a><span class="c1"># obs_dict contains:</span>
+</span><span id="__span-1-26"><a id="__codelineno-1-26" name="__codelineno-1-26" href="#__codelineno-1-26"></a><span class="c1"># {</span>
+</span><span id="__span-1-27"><a id="__codelineno-1-27" name="__codelineno-1-27" href="#__codelineno-1-27"></a><span class="c1">#   &quot;market_data_1Minute&quot;: torch.Tensor([12, num_features]),</span>
+</span><span id="__span-1-28"><a id="__codelineno-1-28" name="__codelineno-1-28" href="#__codelineno-1-28"></a><span class="c1">#   &quot;market_data_5Minute&quot;: torch.Tensor([8, num_features]),</span>
+</span><span id="__span-1-29"><a id="__codelineno-1-29" name="__codelineno-1-29" href="#__codelineno-1-29"></a><span class="c1">#   &quot;market_data_15Minute&quot;: torch.Tensor([8, num_features]),</span>
+</span><span id="__span-1-30"><a id="__codelineno-1-30" name="__codelineno-1-30" href="#__codelineno-1-30"></a><span class="c1"># }</span>
+</span><span id="__span-1-31"><a id="__codelineno-1-31" name="__codelineno-1-31" href="#__codelineno-1-31"></a>
+</span><span id="__span-1-32"><a id="__codelineno-1-32" name="__codelineno-1-32" href="#__codelineno-1-32"></a><span class="c1"># Reset for new episode</span>
+</span><span id="__span-1-33"><a id="__codelineno-1-33" name="__codelineno-1-33" href="#__codelineno-1-33"></a><span class="n">sampler</span><span class="o">.</span><span class="n">reset</span><span class="p">(</span><span class="n">random_start</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </span></code></pre></div>
 <h3 id="usage-in-offline-environments">Usage in Offline Environments<a class="headerlink" href="#usage-in-offline-environments" title="Permanent link">&para;</a></h3>
 <p>The sampler is used in all offline environments (SequentialTradingEnv, SequentialTradingEnvSLTP, OneStepTradingEnv) and allows flexible selection of timeframes through the environment configuration:</p>
@@ -1711,6 +1856,118 @@
 </tbody>
 </table>
 <hr />
+<h2 id="auxiliary-data-columns">Auxiliary Data Columns<a class="headerlink" href="#auxiliary-data-columns" title="Permanent link">&para;</a></h2>
+<p>The sampler accepts DataFrames with extra columns beyond OHLCV. This lets you include data from external sources — funding rates, basis, open interest, sentiment scores — alongside price data without needing a <code>feature_preprocessing_fn</code>.</p>
+<h3 id="how-it-works_1">How It Works<a class="headerlink" href="#how-it-works_1" title="Permanent link">&para;</a></h3>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a>DataFrame columns:  [timestamp, open, high, low, close, volume, funding_rate, basis]
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>                                                                 ^^^^^^^^^^^^  ^^^^^
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a>                                                                 auxiliary columns
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a>After reorder:      [open, high, low, close, volume, funding_rate, basis]
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a>                     ───────── OHLCV ─────────  ──── auxiliary ────
+</span><span id="__span-6-6"><a id="__codelineno-6-6" name="__codelineno-6-6" href="#__codelineno-6-6"></a>                     positions 0-4 (guaranteed)   positions 5+
+</span></code></pre></div>
+<ol>
+<li><strong>Validation</strong>: The sampler checks that OHLCV + timestamp columns are present. Extra columns are accepted.</li>
+<li><strong>Column reordering</strong>: OHLCV is always placed at positions 0-4, auxiliary columns follow after. This preserves internal positional contracts.</li>
+<li><strong>Resampling</strong>: When resampling to higher timeframes, auxiliary columns use <code>"last"</code> aggregation (the value at bar close), while OHLCV uses canonical rules (open=first, high=max, low=min, close=last, volume=sum).</li>
+<li><strong>Sparse data handling</strong>: Auxiliary NaN values are forward-filled after resampling (see below).</li>
+<li><strong>Observation tensors</strong>: Shape becomes <code>(window_size, 5 + n_aux)</code> instead of <code>(window_size, 5)</code>.</li>
+</ol>
+<h3 id="sparse-auxiliary-data">Sparse Auxiliary Data<a class="headerlink" href="#sparse-auxiliary-data" title="Permanent link">&para;</a></h3>
+<div class="admonition warning">
+<p class="admonition-title">Auxiliary data is forward-filled automatically</p>
+<p>Auxiliary data often has a <strong>different frequency</strong> than OHLCV. For example, funding rates update every 8 hours while price data is 1-minute. When resampled, most bars will have no auxiliary value (NaN).</p>
+<p><strong>The sampler handles this automatically:</strong> after resampling, auxiliary NaN values are forward-filled — the last known value persists until the next update. Any leading NaN (before the first known value) is filled with 0.</p>
+<div class="language-text highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a>Raw funding_rate (1h updates on 1m data):
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a>t=0: 0.001, t=1: NaN, t=2: NaN, ..., t=59: NaN, t=60: 0.002, ...
+</span><span id="__span-7-3"><a id="__codelineno-7-3" name="__codelineno-7-3" href="#__codelineno-7-3"></a>
+</span><span id="__span-7-4"><a id="__codelineno-7-4" name="__codelineno-7-4" href="#__codelineno-7-4"></a>After resampling to 5min bars:
+</span><span id="__span-7-5"><a id="__codelineno-7-5" name="__codelineno-7-5" href="#__codelineno-7-5"></a>[0-5]:  NaN → 0.001 (last of [0.001, NaN, NaN, NaN, NaN])
+</span><span id="__span-7-6"><a id="__codelineno-7-6" name="__codelineno-7-6" href="#__codelineno-7-6"></a>[5-10]: NaN → forward-filled to 0.001
+</span><span id="__span-7-7"><a id="__codelineno-7-7" name="__codelineno-7-7" href="#__codelineno-7-7"></a>[10-15]: NaN → forward-filled to 0.001
+</span><span id="__span-7-8"><a id="__codelineno-7-8" name="__codelineno-7-8" href="#__codelineno-7-8"></a>...
+</span><span id="__span-7-9"><a id="__codelineno-7-9" name="__codelineno-7-9" href="#__codelineno-7-9"></a>[60-65]: 0.002 (new value arrives)
+</span></code></pre></div>
+<p><strong>This means:</strong></p>
+<ul>
+<li>You do <strong>not</strong> need to pre-fill auxiliary data before passing it to the sampler</li>
+<li>Bars are never dropped due to missing auxiliary data (only missing OHLCV drops a bar)</li>
+<li>The agent always sees the <strong>most recent known value</strong> for each auxiliary column</li>
+</ul>
+</div>
+<h3 id="example-futures-data-with-funding-rate">Example: Futures Data with Funding Rate<a class="headerlink" href="#example-futures-data-with-funding-rate" title="Permanent link">&para;</a></h3>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">torchtrade.envs.offline.infrastructure.sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">MarketDataObservationSampler</span>
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">torchtrade.envs.utils.timeframe</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeFrame</span><span class="p">,</span> <span class="n">TimeFrameUnit</span>
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a>
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="c1"># Load OHLCV + auxiliary data</span>
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a>    <span class="s2">&quot;timestamp&quot;</span><span class="p">:</span> <span class="n">timestamps</span><span class="p">,</span>
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a>    <span class="s2">&quot;open&quot;</span><span class="p">:</span> <span class="n">open_prices</span><span class="p">,</span>
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a>    <span class="s2">&quot;high&quot;</span><span class="p">:</span> <span class="n">high_prices</span><span class="p">,</span>
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a>    <span class="s2">&quot;low&quot;</span><span class="p">:</span> <span class="n">low_prices</span><span class="p">,</span>
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a>    <span class="s2">&quot;close&quot;</span><span class="p">:</span> <span class="n">close_prices</span><span class="p">,</span>
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a>    <span class="s2">&quot;volume&quot;</span><span class="p">:</span> <span class="n">volumes</span><span class="p">,</span>
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a>    <span class="s2">&quot;funding_rate&quot;</span><span class="p">:</span> <span class="n">funding_rates</span><span class="p">,</span>  <span class="c1"># extra column</span>
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a>    <span class="s2">&quot;basis&quot;</span><span class="p">:</span> <span class="n">basis_values</span><span class="p">,</span>          <span class="c1"># extra column</span>
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="p">})</span>
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a>
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="n">sampler</span> <span class="o">=</span> <span class="n">MarketDataObservationSampler</span><span class="p">(</span>
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a>    <span class="n">df</span><span class="o">=</span><span class="n">df</span><span class="p">,</span>
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a>    <span class="n">time_frames</span><span class="o">=</span><span class="p">[</span><span class="n">TimeFrame</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span> <span class="n">TimeFrame</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">)],</span>
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a>    <span class="n">window_sizes</span><span class="o">=</span><span class="p">[</span><span class="mi">12</span><span class="p">,</span> <span class="mi">8</span><span class="p">],</span>
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a>    <span class="n">execute_on</span><span class="o">=</span><span class="n">TimeFrame</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">TimeFrameUnit</span><span class="o">.</span><span class="n">Minute</span><span class="p">),</span>
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="p">)</span>
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="c1"># Observations now include auxiliary data</span>
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="n">sampler</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+</span><span id="__span-8-26"><a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="n">obs</span><span class="p">,</span> <span class="n">ts</span><span class="p">,</span> <span class="n">truncated</span> <span class="o">=</span> <span class="n">sampler</span><span class="o">.</span><span class="n">get_sequential_observation</span><span class="p">()</span>
+</span><span id="__span-8-27"><a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="c1"># obs[&quot;1Minute&quot;].shape = (12, 7)  — 5 OHLCV + 2 auxiliary</span>
+</span><span id="__span-8-28"><a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="c1"># obs[&quot;5Minute&quot;].shape = (8, 7)</span>
+</span></code></pre></div>
+<h3 id="combining-with-feature-processing">Combining with Feature Processing<a class="headerlink" href="#combining-with-feature-processing" title="Permanent link">&para;</a></h3>
+<p>Auxiliary columns are available inside <code>feature_preprocessing_fn</code>, letting you derive features from both OHLCV and auxiliary data:</p>
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="k">def</span><span class="w"> </span><span class="nf">futures_features</span><span class="p">(</span><span class="n">df</span><span class="p">:</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_close&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>
+</span><span id="__span-9-3"><a id="__codelineno-9-3" name="__codelineno-9-3" href="#__codelineno-9-3"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_volume&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;volume&quot;</span><span class="p">]</span>
+</span><span id="__span-9-4"><a id="__codelineno-9-4" name="__codelineno-9-4" href="#__codelineno-9-4"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_funding_rate&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;funding_rate&quot;</span><span class="p">]</span>  <span class="c1"># auxiliary column</span>
+</span><span id="__span-9-5"><a id="__codelineno-9-5" name="__codelineno-9-5" href="#__codelineno-9-5"></a>    <span class="n">df</span><span class="p">[</span><span class="s2">&quot;features_basis_norm&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;basis&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">df</span><span class="p">[</span><span class="s2">&quot;close&quot;</span><span class="p">]</span>  <span class="c1"># derived from aux + OHLCV</span>
+</span><span id="__span-9-6"><a id="__codelineno-9-6" name="__codelineno-9-6" href="#__codelineno-9-6"></a>    <span class="n">df</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-9-7"><a id="__codelineno-9-7" name="__codelineno-9-7" href="#__codelineno-9-7"></a>    <span class="k">return</span> <span class="n">df</span>
+</span></code></pre></div>
+<h3 id="when-to-use-auxiliary-columns-vs-feature-processing">When to Use Auxiliary Columns vs Feature Processing<a class="headerlink" href="#when-to-use-auxiliary-columns-vs-feature-processing" title="Permanent link">&para;</a></h3>
+<table>
+<thead>
+<tr>
+<th>Approach</th>
+<th>Use For</th>
+<th>Example</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><strong>Auxiliary columns</strong></td>
+<td>Raw external data that exists in your dataset</td>
+<td>Funding rate, open interest, basis, sentiment</td>
+</tr>
+<tr>
+<td><strong>Feature processing</strong></td>
+<td>Derived indicators computed from data</td>
+<td>RSI, MACD, Bollinger Bands, moving averages</td>
+</tr>
+<tr>
+<td><strong>Both together</strong></td>
+<td>External data + derived features</td>
+<td>Funding rate (aux) + funding rate change (derived)</td>
+</tr>
+</tbody>
+</table>
+<p><strong>Two modes of operation:</strong></p>
+<ul>
+<li><strong>Without <code>feature_preprocessing_fn</code></strong>: All columns (OHLCV + auxiliary) flow through directly as raw features. The <code>features_*</code> prefix is not required.</li>
+<li><strong>With <code>feature_preprocessing_fn</code></strong>: Only columns starting with <code>features_*</code> are included. You control exactly which columns become features.</li>
+</ul>
+<hr />
 <h2 id="key-parameters">Key Parameters<a class="headerlink" href="#key-parameters" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
@@ -1743,7 +2000,7 @@
 <tr>
 <td><code>feature_preprocessing_fn</code></td>
 <td>callable</td>
-<td>Transform OHLCV before windowing</td>
+<td>Transform OHLCV (+ aux) before windowing</td>
 <td><code>add_indicators</code></td>
 </tr>
 </tbody>
@@ -1777,6 +2034,11 @@
 <td>Fill NaN in <code>feature_preprocessing_fn</code> with <code>df.fillna(0)</code></td>
 </tr>
 <tr>
+<td><strong>Stale auxiliary data</strong></td>
+<td>Agent sees outdated values</td>
+<td>Expected behavior — sparse aux data is forward-filled. Ensure your data source updates frequently enough for your use case</td>
+</tr>
+<tr>
 <td><strong>Episode too short</strong></td>
 <td>Episode ends after few steps</td>
 <td>Check data length covers <code>max(window_sizes) * max(time_frames) + episode_length</code></td>
@@ -1807,8 +2069,9 @@
 <hr />
 <h2 id="technical-reference">Technical Reference<a class="headerlink" href="#technical-reference" title="Permanent link">&para;</a></h2>
 <ul>
-<li><strong>Source</strong>: <a href="https://github.com/TorchTrade/TorchTrade/blob/main/torchtrade/envs/offline/sampler.py"><code>torchtrade/envs/offline/sampler.py</code></a></li>
-<li><strong>Resampling Logic</strong>: Uses pandas <code>resample().agg()</code> with OHLCV aggregation rules</li>
+<li><strong>Source</strong>: <a href="https://github.com/TorchTrade/TorchTrade/blob/main/torchtrade/envs/offline/infrastructure/sampler.py"><code>torchtrade/envs/offline/infrastructure/sampler.py</code></a></li>
+<li><strong>Resampling Logic</strong>: Uses pandas <code>resample().agg()</code> with OHLCV aggregation rules (auxiliary columns use <code>"last"</code>)</li>
+<li><strong>Column Order</strong>: OHLCV always occupies positions 0-4 regardless of input column order</li>
 <li><strong>Indexing</strong>: Execution times mapped to 1-minute bar indices, then resampled timeframes aligned</li>
 </ul>
 <hr />
