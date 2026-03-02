@@ -193,6 +193,8 @@ class MarketDataObservationSampler:
                 warnings.warn(warning_msg, UserWarning, stacklevel=2)
 
         self.execute_base_features_df = execute_base_raw.ffill()[self.min_start_time:]
+        if aux_cols:
+            self.execute_base_features_df[aux_cols] = self.execute_base_features_df[aux_cols].fillna(0)
         if len(self.execute_base_features_df) == 0:
             raise ValueError("No execute_on base features available after min_start_time")
 

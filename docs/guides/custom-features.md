@@ -242,7 +242,7 @@ See [Auxiliary Data Columns](sampler.md#auxiliary-data-columns) for details on h
 
 ## Important Rules
 
-1. **Feature prefix**: All columns MUST start with `features_` (e.g., `features_rsi_14`). Columns without this prefix are ignored.
+1. **Feature prefix** (when using `feature_preprocessing_fn`): All output columns MUST start with `features_` (e.g., `features_rsi_14`). Columns without this prefix are ignored. Without a preprocessing function, raw columns (OHLCV + auxiliary) are used directly.
 2. **Handle NaN**: Technical indicators produce NaN at the start. Always call `df.fillna(0, inplace=True)` (or `ffill`/`bfill`).
 3. **Return the DataFrame**: Your function must `return df`.
 4. **No lookahead bias**: Only use past data. Never use `.shift(-1)` or future values.
