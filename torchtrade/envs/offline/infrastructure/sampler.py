@@ -28,18 +28,26 @@ class MarketDataObservationSampler:
         features_start_with: str = "features_",
         max_traj_length: Optional[int] = None,
         seed: Optional[int] = None,
+        auxiliary_agg: Optional[Dict[str, str]] = None,
     ):
         self.seed = seed
         self.np_rng = np.random.default_rng(seed)
+        self.auxiliary_agg = auxiliary_agg
 
         if seed is not None:
             torch.manual_seed(seed)
-        required_columns = ["timestamp", "open", "high", "low", "close", "volume"]
-        if list(df.columns) != required_columns:
+        required_columns = {"timestamp", "open", "high", "low", "close", "volume"}
+        missing = required_columns - set(df.columns)
+        if missing:
             raise ValueError(
-                f"DataFrame columns {list(df.columns)} do not match required format "
-                f"{required_columns}. Rename your columns before passing to the sampler."
+                f"DataFrame missing required columns: {missing}. "
+                f"Got columns: {list(df.columns)}"
             )
+
+        # Reorder: OHLCV first, then auxiliary (preserves row[:5] slicing for base features)
+        ohlcv_cols = ["open", "high", "low", "close", "volume"]
+        aux_cols = [c for c in df.columns if c not in required_columns]
+        df = df[["timestamp"] + ohlcv_cols + aux_cols]
 
         # Make sure time_frames and window_sizes are lists of same length
         if isinstance(time_frames, TimeFrame):
@@ -81,9 +89,14 @@ class MarketDataObservationSampler:
         self.resampled_dfs: Dict[str, pd.DataFrame] = {}
         first_time_stamps = []
         for tf, proc_fn in zip(time_frames, processing_fns):
+            ohlcv_agg = {"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"}
+            aux_cols = [c for c in self.df.columns if c not in ohlcv_agg]
+            aux_agg = {c: (self.auxiliary_agg or {}).get(c, "last") for c in aux_cols}
+            full_agg = {**ohlcv_agg, **aux_agg}
+
             resampled = (
                 self.df.resample(tf.to_pandas_freq())
-                .agg({"open": "first", "high": "max", "low": "min", "close": "last", "volume": "sum"})
+                .agg(full_agg)
                 .dropna()
             )
 

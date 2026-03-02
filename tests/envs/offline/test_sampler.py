@@ -78,7 +78,7 @@ class TestSamplerInitialization:
         n = 200
         df = pd.DataFrame(np.random.rand(n, len(columns)), columns=columns)
 
-        with pytest.raises(ValueError, match="do not match required format"):
+        with pytest.raises(ValueError, match="missing required columns"):
             MarketDataObservationSampler(
                 df=df,
                 time_frames=TimeFrame(1, TimeFrameUnit.Minute),
@@ -156,6 +156,174 @@ class TestSamplerReset:
         # Should have some variation in start times
         unique_timestamps = len(set(first_timestamps))
         assert unique_timestamps > 1
+
+
+class TestAuxiliaryColumns:
+    """Tests for auxiliary (non-OHLCV) column support."""
+
+    @pytest.fixture
+    def ohlcv_with_aux_df(self):
+        """Create OHLCV + auxiliary columns (funding_rate, basis)."""
+        n_minutes = 500
+        start_time = pd.Timestamp("2024-01-01 00:00:00")
+        timestamps = pd.date_range(start=start_time, periods=n_minutes, freq="1min")
+        close_prices = np.array([100.0 + i * 0.1 for i in range(n_minutes)])
+
+        return pd.DataFrame({
+            "timestamp": timestamps,
+            "open": close_prices - 0.05,
+            "high": close_prices + 0.1,
+            "low": close_prices - 0.1,
+            "close": close_prices,
+            "volume": np.ones(n_minutes) * 1000,
+            "funding_rate": np.sin(np.arange(n_minutes) / 50) * 0.001,
+            "basis": np.cos(np.arange(n_minutes) / 30) * 0.5,
+        })
+
+    def test_sampler_accepts_auxiliary_columns(self, ohlcv_with_aux_df):
+        """Sampler should initialize successfully with extra columns beyond OHLCV."""
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        assert sampler is not None
+        assert sampler.max_steps > 0
+
+    def test_auxiliary_columns_included_in_resampled_data(self, ohlcv_with_aux_df):
+        """Resampled DataFrames should contain auxiliary columns."""
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(5, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        resampled = sampler.resampled_dfs["5Minute"]
+        assert "funding_rate" in resampled.columns
+        assert "basis" in resampled.columns
+        # OHLCV should still be there too
+        for col in ["open", "high", "low", "close", "volume"]:
+            assert col in resampled.columns
+
+    def test_auxiliary_columns_increase_feature_count(self, ohlcv_with_aux_df):
+        """Feature count should include auxiliary columns (5 OHLCV + 2 aux = 7)."""
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        num_features = sampler.get_num_features_per_timeframe()
+        assert num_features["1Minute"] == 7  # 5 OHLCV + funding_rate + basis
+
+    def test_observation_tensor_shape_with_auxiliary(self, ohlcv_with_aux_df):
+        """Observation tensors should have shape (window_size, 7) with 2 aux columns."""
+        window_size = 10
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=window_size,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        sampler.reset()
+        obs, _, _ = sampler.get_sequential_observation()
+        assert obs["1Minute"].shape == (window_size, 7)
+
+    def test_ohlcv_ordering_preserved_with_auxiliary(self, ohlcv_with_aux_df):
+        """First 5 columns must be OHLCV in canonical order regardless of input order."""
+        # Shuffle column order in input — OHLCV should still come first after reorder
+        shuffled = ohlcv_with_aux_df[["timestamp", "basis", "volume", "close", "funding_rate", "open", "high", "low"]]
+        sampler = MarketDataObservationSampler(
+            df=shuffled,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        # Internal df should have OHLCV first
+        assert list(sampler.df.columns[:5]) == ["open", "high", "low", "close", "volume"]
+
+    def test_ohlcv_slicing_correct_with_auxiliary(self, ohlcv_with_aux_df):
+        """get_sequential_observation_with_ohlcv row[:5] should return OHLCV, not auxiliary data."""
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        sampler.reset()
+        obs, ts, truncated, ohlcv = sampler.get_sequential_observation_with_ohlcv()
+
+        # OHLCV values should be valid prices, not small aux values like funding_rate
+        assert ohlcv.open > 50  # Prices start at ~100
+        assert ohlcv.close > 50
+        assert ohlcv.volume == 1000
+
+    def test_auxiliary_agg_override(self, ohlcv_with_aux_df):
+        """auxiliary_agg parameter should override default 'last' aggregation."""
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(5, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+            auxiliary_agg={"funding_rate": "mean"},
+        )
+        # Should initialize without error — verify the aggregation was applied
+        resampled = sampler.resampled_dfs["5Minute"]
+        assert "funding_rate" in resampled.columns
+        assert len(resampled) > 0
+
+    def test_auxiliary_default_agg_is_last(self, ohlcv_with_aux_df):
+        """Without auxiliary_agg, aux columns should use 'last' aggregation."""
+        # Create data where funding_rate changes within a 5-min window
+        df = ohlcv_with_aux_df.copy()
+        # Set a known pattern: first 5 rows have funding_rate = [0.1, 0.2, 0.3, 0.4, 0.5]
+        df.loc[0:4, "funding_rate"] = [0.1, 0.2, 0.3, 0.4, 0.5]
+
+        sampler = MarketDataObservationSampler(
+            df=df,
+            time_frames=TimeFrame(5, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+        )
+        resampled = sampler.resampled_dfs["5Minute"]
+        # "last" of [0.1, 0.2, 0.3, 0.4, 0.5] = 0.5
+        first_funding = resampled["funding_rate"].iloc[0]
+        assert abs(first_funding - 0.5) < 1e-6
+
+    def test_backward_compat_ohlcv_only(self, sample_ohlcv_df, execute_timeframe):
+        """Existing OHLCV-only DataFrames should work identically to before."""
+        sampler = MarketDataObservationSampler(
+            df=sample_ohlcv_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=execute_timeframe,
+        )
+        # Should have exactly 5 features (no aux)
+        num_features = sampler.get_num_features_per_timeframe()
+        assert num_features["1Minute"] == 5
+
+    def test_feature_processing_with_auxiliary(self, ohlcv_with_aux_df):
+        """Feature processing function should see auxiliary columns."""
+        def feature_fn(df):
+            df = df.copy().reset_index(drop=False)
+            for col in ["close", "volume", "funding_rate", "basis"]:
+                if col in df.columns:
+                    df[f"features_{col}"] = df[col]
+            df.dropna(inplace=True)
+            return df
+
+        sampler = MarketDataObservationSampler(
+            df=ohlcv_with_aux_df,
+            time_frames=TimeFrame(1, TimeFrameUnit.Minute),
+            window_sizes=10,
+            execute_on=TimeFrame(1, TimeFrameUnit.Minute),
+            feature_processing_fn=feature_fn,
+        )
+        feature_keys = sampler.get_feature_keys()
+        assert "features_close" in feature_keys
+        assert "features_funding_rate" in feature_keys
+        assert "features_basis" in feature_keys
 
 
 class TestSamplerObservations:
