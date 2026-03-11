@@ -52,8 +52,8 @@ class SLTPMixin:
             self.active_take_profit = 0.0
 
         # Detect state drift (position changed direction unexpectedly)
-        if prev_position != 0 and self.position.current_position != 0 and \
-                prev_position != self.position.current_position:
+        if (prev_position != 0 and self.position.current_position != 0
+                and prev_position != self.position.current_position):
             logger.warning(
                 f"Position direction changed unexpectedly: {prev_position} -> "
                 f"{self.position.current_position}"

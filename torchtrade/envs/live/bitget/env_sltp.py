@@ -186,7 +186,8 @@ class BitgetFuturesSLTPTorchTradingEnv(SLTPMixin, BitgetBaseTorchTradingEnv):
         trade_info = self._execute_trade_if_needed(action_tuple)
         trade_info["position_closed"] = position_closed
 
-        # Update position state from trade result
+        # Eagerly update position from trade result so the rest of this step
+        # sees the new state without waiting for the next sync cycle.
         if trade_info["executed"] and trade_info.get("success") is not False:
             if trade_info["side"] == "buy":
                 self.position.current_position = 1  # Long

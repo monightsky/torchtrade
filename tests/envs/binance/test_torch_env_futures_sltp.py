@@ -261,50 +261,6 @@ class TestBinanceFuturesSLTPTorchTradingEnv:
                 assert trade_info["stop_loss"] == pytest.approx(expected_sl, rel=1e-2)
                 assert trade_info["take_profit"] == pytest.approx(expected_tp, rel=1e-2)
 
-    def test_position_closed_detection(self, env, mock_trader):
-        """Test detection of position closed by SL/TP."""
-        with patch.object(env, "_wait_for_next_timestamp"):
-            env.reset()
-            env.position.current_position = 1  # Simulate having a long position
-            env.active_stop_loss = 48000.0
-            env.active_take_profit = 52000.0
-
-            # Exchange reports no position (SL/TP triggered)
-            closed = env._sync_position_from_exchange(None)
-            assert closed is True
-            assert env.position.current_position == 0
-            assert env.active_stop_loss == 0.0
-            assert env.active_take_profit == 0.0
-
-    def test_position_not_closed_detection(self, env, mock_trader):
-        """Test detection when position is still open."""
-        from torchtrade.envs.live.binance.order_executor import PositionStatus
-
-        with patch.object(env, "_wait_for_next_timestamp"):
-            env.reset()
-            env.position.current_position = 1
-            env.active_stop_loss = 48000.0
-            env.active_take_profit = 52000.0
-
-            # Position still exists on exchange
-            position_status = PositionStatus(
-                qty=0.001,
-                notional_value=50.0,
-                entry_price=50000.0,
-                unrealized_pnl=0.5,
-                unrealized_pnl_pct=0.01,
-                mark_price=50500.0,
-                leverage=5,
-                margin_type="isolated",
-                liquidation_price=45000.0,
-            )
-
-            closed = env._sync_position_from_exchange(position_status)
-            assert closed is False
-            assert env.position.current_position == 1
-            assert env.active_stop_loss == 48000.0
-            assert env.active_take_profit == 52000.0
-
     def test_active_sltp_tracking(self, env, mock_trader):
         """Test that active SL/TP levels are tracked."""
         with patch.object(env, "_wait_for_next_timestamp"):

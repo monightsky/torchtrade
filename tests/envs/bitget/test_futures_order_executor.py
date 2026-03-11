@@ -372,16 +372,6 @@ class TestBitgetFuturesOrderClass:
 
         assert success is True
 
-    def test_trade_returns_false_when_main_order_fails(self, order_executor, mock_ccxt_client):
-        """When the main order itself fails, trade() must return False."""
-        mock_ccxt_client.create_order = MagicMock(
-            side_effect=Exception("Insufficient margin")
-        )
-
-        success = order_executor.trade(side="buy", quantity=0.001)
-
-        assert success is False
-
     def test_trade_failure_handling(self, order_executor, mock_ccxt_client):
         """Test that trade failures are handled gracefully."""
         # Mock API failure

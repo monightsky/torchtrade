@@ -45,6 +45,8 @@ class TestSyncPositionFromExchange:
         (-0.005, -1, -1, False),
         # Position status is None (no position on exchange)
         (None, 1, 0, True),
+        # None + already flat = stays flat (steady-state HOLD)
+        (None, 0, 0, False),
     ], ids=[
         "sl_tp_closes_long",
         "sl_tp_closes_short",
@@ -54,6 +56,7 @@ class TestSyncPositionFromExchange:
         "long_matches",
         "short_matches",
         "none_closes_long",
+        "none_stays_flat",
     ])
     def test_position_sync(self, env, exchange_qty, prev_pos, expected_pos, expected_closed):
         """Position state must sync from exchange, detecting closures and fixing drift."""
@@ -87,24 +90,3 @@ class TestSyncPositionFromExchange:
         assert env.active_stop_loss == 48000.0
         assert env.active_take_profit == 52000.0
 
-    def test_stacking_prevention_scenario(self, env):
-        """Reproduce the stacking bug: main order succeeds, SL/TP fails, state drifts.
-
-        Without the sync fix, the env would think it's flat (current_position=0)
-        while the exchange has an open position, allowing duplicate orders.
-        """
-        # Step 1: Trade executed, main order succeeded but SL/TP failed.
-        # The env never updated current_position (it stayed 0).
-        env.position.current_position = 0  # Bug state: env thinks flat
-
-        # Step 2: Exchange actually has a long position
-        exchange_status = FakePositionStatus(qty=0.005)
-
-        # Step 3: _sync_position_from_exchange corrects the drift
-        closed = env._sync_position_from_exchange(exchange_status)
-
-        assert closed is False  # Not a closure
-        assert env.position.current_position == 1  # Now correctly reflects exchange
-
-        # Step 4: Duplicate guard would now correctly block re-entry
-        # (tested in env_sltp tests, but the precondition is the sync above)
