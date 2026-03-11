@@ -349,6 +349,45 @@ class TestBinanceFuturesOrderClass:
         assert call_kwargs["reduceOnly"] == "true"
 
 
+    def test_trade_returns_true_when_tp_fails(self, order_executor, mock_client):
+        """Main order success must not be masked by SL/TP failure (stacking bug root cause)."""
+        mock_client.futures_create_order = MagicMock(side_effect=[
+            {"orderId": 12345, "status": "FILLED"},  # Main order succeeds
+            Exception("Precision is over the maximum defined for this asset"),  # TP fails
+            Exception("Precision is over the maximum defined for this asset"),  # SL fails
+        ])
+
+        success = order_executor.trade(
+            side="BUY",
+            quantity=0.001,
+            order_type="market",
+            take_profit=52000.1234,
+            stop_loss=48000.5678,
+        )
+
+        # Main order succeeded, so trade() must return True
+        assert success is True
+        # bracket_status should reflect the failures
+        assert order_executor.bracket_status["tp_placed"] is False
+        assert order_executor.bracket_status["sl_placed"] is False
+
+    def test_trade_returns_false_when_main_order_fails(self, order_executor, mock_client):
+        """When the main order itself fails, trade() must return False."""
+        mock_client.futures_create_order = MagicMock(
+            side_effect=Exception("Insufficient margin")
+        )
+
+        success = order_executor.trade(
+            side="BUY",
+            quantity=0.001,
+            order_type="market",
+            take_profit=52000.0,
+            stop_loss=48000.0,
+        )
+
+        assert success is False
+
+
 class TestPositionStatusDataclass:
     """Tests for PositionStatus dataclass."""
 
