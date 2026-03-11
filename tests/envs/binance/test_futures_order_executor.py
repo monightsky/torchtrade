@@ -213,11 +213,11 @@ class TestBinanceFuturesOrderClass:
     @pytest.mark.parametrize("raw_tp,raw_sl,expected_tp,expected_sl", [
         (84291.4358, 82622.2122, 84291.4, 82622.2),  # BTC at ~$83k: TP +1%, SL -1%
         (50000.0, 49000.0, 50000.0, 49000.0),        # Already rounded
-        (50000.05, 49999.96, 50000.1, 50000.0),      # Round up to nearest tick
+        (50000.15, 49999.96, 50000.2, 50000.0),      # Quantize to nearest tick
         (83456.78123, 82621.2147, 83456.8, 82621.2),  # Many decimals
     ])
     def test_bracket_order_prices_rounded_to_tick_size(self, order_executor, mock_client, raw_tp, raw_sl, expected_tp, expected_sl):
-        """SL/TP prices must be rounded to exchange tick size before submission."""
+        """SL/TP prices must be quantized to exchange tick size before submission."""
         success = order_executor.trade(
             side="BUY",
             quantity=0.001,
@@ -228,20 +228,20 @@ class TestBinanceFuturesOrderClass:
 
         assert success is True
 
-        # Check TP order (second call) and SL order (third call)
+        # Find TP and SL calls by order type (not by index, to avoid brittleness)
         calls = mock_client.futures_create_order.call_args_list
-        tp_stop_price = calls[1][1]["stopPrice"]
-        sl_stop_price = calls[2][1]["stopPrice"]
-        assert tp_stop_price == expected_tp
-        assert sl_stop_price == expected_sl
+        tp_call = next(c for c in calls if c[1].get("type") == "TAKE_PROFIT_MARKET")
+        sl_call = next(c for c in calls if c[1].get("type") == "STOP_MARKET")
+        assert tp_call[1]["stopPrice"] == expected_tp
+        assert sl_call[1]["stopPrice"] == expected_sl
 
-    def test_price_precision_fetched_at_init(self, order_executor):
-        """Price precision should be determined from exchange info at init."""
-        # Tick size 0.10 -> 1 decimal place
-        assert order_executor._price_precision == 1
+    def test_tick_size_fetched_at_init(self, order_executor):
+        """Tick size should be cached from exchange info at init."""
+        assert order_executor._tick_size == 0.1
+        assert order_executor._tick_decimals == 1
 
     def test_round_price_without_precision(self, mock_client):
-        """When precision fetch fails, prices pass through unmodified."""
+        """When tick size fetch fails, prices pass through unmodified."""
         from torchtrade.envs.live.binance.order_executor import BinanceFuturesOrderClass
 
         # Make exchange info fail
@@ -250,7 +250,7 @@ class TestBinanceFuturesOrderClass:
         executor = BinanceFuturesOrderClass(
             symbol="BTCUSDT", client=mock_client,
         )
-        assert executor._price_precision is None
+        assert executor._tick_size is None
         assert executor._round_price(82622.2122) == 82622.2122  # Unmodified
 
     def test_get_status(self, order_executor, mock_client):

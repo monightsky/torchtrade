@@ -96,7 +96,8 @@ class BinanceFuturesOrderClass:
         self.margin_type = margin_type
         self.last_order_id = None
 
-        self._price_precision: Optional[int] = None
+        self._tick_size: Optional[float] = None
+        self._tick_decimals: int = 0
 
         # Initialize client
         if client is not None:
@@ -140,27 +141,30 @@ class BinanceFuturesOrderClass:
             logger.warning(f"Could not setup futures account: {e}")
 
     def _fetch_price_precision(self):
-        """Fetch and cache price precision from Binance exchange info."""
+        """Fetch and cache tick size from Binance exchange info."""
         try:
             info = self.client.futures_exchange_info()
             for s in info['symbols']:
                 if s['symbol'] == self.symbol:
                     for f in s['filters']:
                         if f['filterType'] == 'PRICE_FILTER':
-                            tick_size = float(f['tickSize'])
-                            # Assumes power-of-10 tick sizes (0.01, 0.1, 1, etc.),
-                            # which all major exchanges use for price filters.
-                            self._price_precision = int(round(-math.log10(tick_size)))
-                            logger.info(f"Price precision for {self.symbol}: {self._price_precision} decimals (tick={tick_size})")
+                            tick_str = f['tickSize']
+                            self._tick_size = float(tick_str)
+                            # Derive decimal places from tick string for clean formatting
+                            if '.' in tick_str:
+                                decimal_part = tick_str.rstrip('0').split('.')[1]
+                                self._tick_decimals = len(decimal_part) if decimal_part else 0
+                            logger.info(f"Tick size for {self.symbol}: {self._tick_size} ({self._tick_decimals} decimals)")
                             return
             logger.warning(f"No PRICE_FILTER found for {self.symbol}, prices will not be rounded")
         except Exception as e:
-            logger.warning(f"Could not fetch price precision for {self.symbol}: {e}")
+            logger.warning(f"Could not fetch tick size for {self.symbol}: {e}")
 
     def _round_price(self, price: float) -> float:
-        """Round a price to the exchange's tick size precision."""
-        if self._price_precision is not None:
-            return round(price, self._price_precision)
+        """Round a price to the nearest tick size."""
+        if self._tick_size is not None:
+            rounded = round(price / self._tick_size) * self._tick_size
+            return round(rounded, self._tick_decimals)
         return price
 
     def trade(

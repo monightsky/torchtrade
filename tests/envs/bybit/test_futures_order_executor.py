@@ -74,8 +74,8 @@ class TestBybitFuturesOrderClass:
 
         assert success is True
         call_kwargs = mock_pybit_client.place_order.call_args[1]
-        assert call_kwargs["takeProfit"] == "51000.0"
-        assert call_kwargs["stopLoss"] == "49000.0"
+        assert call_kwargs["takeProfit"] == "51000.00"
+        assert call_kwargs["stopLoss"] == "49000.00"
 
     @pytest.mark.parametrize("raw_tp,raw_sl,expected_tp,expected_sl", [
         (82622.2122, 84291.4358, "82622.21", "84291.44"),  # Rounded to 2 dp (tick=0.01)
@@ -96,13 +96,13 @@ class TestBybitFuturesOrderClass:
         assert call_kwargs["takeProfit"] == expected_tp
         assert call_kwargs["stopLoss"] == expected_sl
 
-    def test_price_precision_fetched_at_init(self, order_executor):
-        """Price precision should be determined from instrument info at init."""
-        # Tick size 0.01 -> 2 decimal places
-        assert order_executor._price_precision == 2
+    def test_tick_size_fetched_at_init(self, order_executor):
+        """Tick size should be cached from instrument info at init."""
+        assert order_executor._tick_size == 0.01
+        assert order_executor._tick_decimals == 2
 
     def test_round_price_without_precision(self, mock_pybit_client):
-        """When precision fetch fails, prices pass through unmodified."""
+        """When tick size fetch fails, prices pass through unmodified."""
         from torchtrade.envs.live.bybit.order_executor import BybitFuturesOrderClass
 
         mock_pybit_client.get_instruments_info = MagicMock(side_effect=Exception("API down"))
@@ -110,7 +110,7 @@ class TestBybitFuturesOrderClass:
         executor = BybitFuturesOrderClass(
             symbol="BTCUSDT", client=mock_pybit_client,
         )
-        assert executor._price_precision is None
+        assert executor._tick_size is None
         assert executor._round_price(82622.2122) == 82622.2122
 
     def test_get_status_with_position(self, order_executor):
@@ -370,7 +370,7 @@ class TestBybitFuturesOrderClass:
         )
         assert success is True
         call_kwargs = mock_pybit_client.place_order.call_args[1]
-        assert call_kwargs["price"] == "50000.0"
+        assert call_kwargs["price"] == "50000.00"
         assert call_kwargs["orderType"] == "Limit"
 
     def test_get_status_hedge_mode_selects_nonzero(self, order_executor, mock_pybit_client):

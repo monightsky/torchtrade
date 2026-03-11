@@ -178,7 +178,8 @@ class BitgetFuturesOrderClass:
         """Round a price to the exchange's tick size precision using CCXT."""
         try:
             return float(self.client.price_to_precision(self.symbol, price))
-        except Exception:
+        except Exception as e:
+            logger.warning(f"price_to_precision failed for {self.symbol}, using unrounded price: {e}")
             return price
 
     def _calculate_unrealized_pnl_pct(self, qty: float, entry_price: float, mark_price: float) -> float:
