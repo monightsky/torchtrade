@@ -121,7 +121,11 @@ class BybitFuturesOrderClass:
         self._fetch_price_precision()
 
     def _fetch_price_precision(self):
-        """Fetch and cache price precision from Bybit instruments info."""
+        """Fetch and cache price precision (and lot size) from Bybit instruments info.
+
+        Populates both _price_precision and _lot_size_cache from a single API call
+        to avoid a duplicate get_instruments_info request when get_lot_size() is called later.
+        """
         try:
             response = self.client.get_instruments_info(
                 category="linear", symbol=self.symbol,
@@ -132,11 +136,21 @@ class BybitFuturesOrderClass:
                 return
             instruments = response.get("result", {}).get("list", [])
             if instruments:
-                price_filter = instruments[0].get("priceFilter", {})
+                instrument = instruments[0]
+                # Price precision from tick size (assumes power-of-10 tick sizes, which
+                # all major exchanges use: 0.01, 0.1, 1, 10, etc.)
+                price_filter = instrument.get("priceFilter", {})
                 tick_size = float(price_filter.get("tickSize", 0))
                 if tick_size > 0:
                     self._price_precision = int(round(-math.log10(tick_size)))
                     logger.info(f"Price precision for {self.symbol}: {self._price_precision} decimals (tick={tick_size})")
+
+                # Also cache lot size to avoid a second API call from get_lot_size()
+                lot_filter = instrument.get("lotSizeFilter", {})
+                self._lot_size_cache = {
+                    "min_qty": float(lot_filter.get("minOrderQty", 0.001)),
+                    "qty_step": float(lot_filter.get("qtyStep", 0.001)),
+                }
         except Exception as e:
             logger.warning(f"Could not fetch price precision for {self.symbol}: {e}")
 

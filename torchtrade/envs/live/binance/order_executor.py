@@ -148,6 +148,8 @@ class BinanceFuturesOrderClass:
                     for f in s['filters']:
                         if f['filterType'] == 'PRICE_FILTER':
                             tick_size = float(f['tickSize'])
+                            # Assumes power-of-10 tick sizes (0.01, 0.1, 1, etc.),
+                            # which all major exchanges use for price filters.
                             self._price_precision = int(round(-math.log10(tick_size)))
                             logger.info(f"Price precision for {self.symbol}: {self._price_precision} decimals (tick={tick_size})")
                             return

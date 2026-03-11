@@ -307,6 +307,52 @@ class TestBitgetFuturesOrderClass:
         # Note: set_margin_mode may not work reliably on Bitget, but we test the call
         mock_ccxt_client.set_margin_mode.assert_called()
 
+    def test_round_price_fallback_when_precision_unavailable(self, mock_ccxt_client):
+        """When price_to_precision fails, prices must pass through unmodified."""
+        from torchtrade.envs.live.bitget.order_executor import BitgetFuturesOrderClass
+
+        # Make load_markets and price_to_precision fail
+        mock_ccxt_client.load_markets = MagicMock(side_effect=Exception("Network error"))
+        mock_ccxt_client.price_to_precision = MagicMock(side_effect=Exception("No market data"))
+
+        with patch('torchtrade.envs.live.bitget.order_executor.ccxt.bitget', return_value=mock_ccxt_client):
+            executor = BitgetFuturesOrderClass(
+                symbol="BTC/USDT:USDT", api_key="k", api_secret="s", passphrase="p",
+            )
+            executor.client = mock_ccxt_client
+
+        # _round_price should return the original price when precision is unavailable
+        assert executor._round_price(82622.2122) == 82622.2122
+
+        # Bracket order should still succeed with unrounded prices
+        success = executor.trade(
+            side="buy", quantity=0.001, order_type="market",
+            take_profit=82622.2122, stop_loss=81234.5678,
+        )
+        assert success is True
+
+    def test_tp_only_order_price_rounded(self, order_executor, mock_ccxt_client):
+        """TP-only order must have its price rounded before submission."""
+        success = order_executor.trade(
+            side="buy", quantity=0.001, order_type="market",
+            take_profit=51234.5678, stop_loss=None,
+        )
+        assert success is True
+        # TP-only path uses create_order with price param
+        call_args = mock_ccxt_client.create_order.call_args_list
+        tp_call = call_args[-1]  # Last create_order call is the TP order
+        assert tp_call[1]["price"] == 51234.6  # Rounded to 1 decimal
+
+    def test_sl_only_order_price_rounded(self, order_executor, mock_ccxt_client):
+        """SL-only order must have its stopPrice rounded before submission."""
+        success = order_executor.trade(
+            side="buy", quantity=0.001, order_type="market",
+            take_profit=None, stop_loss=48765.4321,
+        )
+        assert success is True
+        call_args = mock_ccxt_client.create_stop_market_order.call_args
+        assert call_args[1]["stopPrice"] == 48765.4  # Rounded to 1 decimal
+
     def test_trade_failure_handling(self, order_executor, mock_ccxt_client):
         """Test that trade failures are handled gracefully."""
         # Mock API failure

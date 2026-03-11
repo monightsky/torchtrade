@@ -487,18 +487,18 @@ class TestBybitFuturesOrderClass:
         assert success is False
 
     def test_get_lot_size_fetches_and_caches(self, order_executor, mock_pybit_client):
-        """get_lot_size must fetch from API and cache the result."""
-        # get_instruments_info is already called once during init (_fetch_price_precision)
+        """get_lot_size must return cached data from init-time instrument fetch."""
+        # _fetch_price_precision already populated _lot_size_cache at init
         init_call_count = mock_pybit_client.get_instruments_info.call_count
 
         lot_size = order_executor.get_lot_size()
         assert lot_size["min_qty"] == 0.001
         assert lot_size["qty_step"] == 0.001
 
-        # Second call uses cache (no additional API call)
+        # Should use cache from init, no additional API call
         lot_size2 = order_executor.get_lot_size()
         assert lot_size2 is lot_size
-        assert mock_pybit_client.get_instruments_info.call_count == init_call_count + 1
+        assert mock_pybit_client.get_instruments_info.call_count == init_call_count
 
     def test_get_lot_size_fallback_on_failure(self, order_executor, mock_pybit_client):
         """get_lot_size must fall back to defaults if API fails."""

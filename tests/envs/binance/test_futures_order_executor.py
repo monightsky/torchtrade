@@ -210,20 +210,20 @@ class TestBinanceFuturesOrderClass:
         # Should have called futures_create_order three times (main + TP + SL)
         assert mock_client.futures_create_order.call_count >= 3
 
-    @pytest.mark.parametrize("raw_price,expected_rounded", [
-        (82622.2122, 82622.2),    # BTC at ~$83k with -1% SL
-        (50000.0, 50000.0),       # Already rounded
-        (49999.99, 50000.0),      # Rounds up to nearest tick
-        (83456.78123, 83456.8),   # Many decimals
+    @pytest.mark.parametrize("raw_tp,raw_sl,expected_tp,expected_sl", [
+        (84291.4358, 82622.2122, 84291.4, 82622.2),  # BTC at ~$83k: TP +1%, SL -1%
+        (50000.0, 49000.0, 50000.0, 49000.0),        # Already rounded
+        (50000.05, 49999.96, 50000.1, 50000.0),      # Round up to nearest tick
+        (83456.78123, 82621.2147, 83456.8, 82621.2),  # Many decimals
     ])
-    def test_bracket_order_prices_rounded_to_tick_size(self, order_executor, mock_client, raw_price, expected_rounded):
+    def test_bracket_order_prices_rounded_to_tick_size(self, order_executor, mock_client, raw_tp, raw_sl, expected_tp, expected_sl):
         """SL/TP prices must be rounded to exchange tick size before submission."""
         success = order_executor.trade(
             side="BUY",
             quantity=0.001,
             order_type="market",
-            take_profit=raw_price,
-            stop_loss=raw_price,
+            take_profit=raw_tp,
+            stop_loss=raw_sl,
         )
 
         assert success is True
@@ -232,8 +232,8 @@ class TestBinanceFuturesOrderClass:
         calls = mock_client.futures_create_order.call_args_list
         tp_stop_price = calls[1][1]["stopPrice"]
         sl_stop_price = calls[2][1]["stopPrice"]
-        assert tp_stop_price == expected_rounded
-        assert sl_stop_price == expected_rounded
+        assert tp_stop_price == expected_tp
+        assert sl_stop_price == expected_sl
 
     def test_price_precision_fetched_at_init(self, order_executor):
         """Price precision should be determined from exchange info at init."""
