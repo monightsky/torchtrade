@@ -170,6 +170,26 @@ class TestBitgetFuturesOrderClass:
         # Should use CCXT's bracket order method
         mock_ccxt_client.create_order_with_take_profit_and_stop_loss.assert_called_once()
 
+    @pytest.mark.parametrize("raw_tp,raw_sl", [
+        (82622.2122, 84291.4358),   # Unrounded prices from percentage calc
+        (51234.5678, 48765.4321),   # Many decimal places
+    ])
+    def test_bracket_order_prices_rounded(self, order_executor, mock_ccxt_client, raw_tp, raw_sl):
+        """SL/TP prices must be rounded via CCXT price_to_precision before submission."""
+        success = order_executor.trade(
+            side="buy",
+            quantity=0.001,
+            order_type="market",
+            take_profit=raw_tp,
+            stop_loss=raw_sl,
+        )
+
+        assert success is True
+        call_kwargs = mock_ccxt_client.create_order_with_take_profit_and_stop_loss.call_args[1]
+        # price_to_precision returns string, _round_price converts back to float
+        assert call_kwargs["takeProfit"] == round(raw_tp, 1)
+        assert call_kwargs["stopLoss"] == round(raw_sl, 1)
+
     def test_get_status(self, order_executor, mock_ccxt_client):
         """Test getting order and position status."""
         # Place an order first

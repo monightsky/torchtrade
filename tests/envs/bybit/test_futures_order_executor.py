@@ -77,6 +77,42 @@ class TestBybitFuturesOrderClass:
         assert call_kwargs["takeProfit"] == "51000.0"
         assert call_kwargs["stopLoss"] == "49000.0"
 
+    @pytest.mark.parametrize("raw_tp,raw_sl,expected_tp,expected_sl", [
+        (82622.2122, 84291.4358, "82622.21", "84291.44"),  # Rounded to 2 dp (tick=0.01)
+        (51234.5678, 48765.4321, "51234.57", "48765.43"),  # Many decimal places
+    ])
+    def test_bracket_order_prices_rounded_to_tick(self, order_executor, mock_pybit_client, raw_tp, raw_sl, expected_tp, expected_sl):
+        """SL/TP prices must be rounded to tick size before submission."""
+        success = order_executor.trade(
+            side="buy",
+            quantity=0.001,
+            order_type="market",
+            take_profit=raw_tp,
+            stop_loss=raw_sl,
+        )
+
+        assert success is True
+        call_kwargs = mock_pybit_client.place_order.call_args[1]
+        assert call_kwargs["takeProfit"] == expected_tp
+        assert call_kwargs["stopLoss"] == expected_sl
+
+    def test_price_precision_fetched_at_init(self, order_executor):
+        """Price precision should be determined from instrument info at init."""
+        # Tick size 0.01 -> 2 decimal places
+        assert order_executor._price_precision == 2
+
+    def test_round_price_without_precision(self, mock_pybit_client):
+        """When precision fetch fails, prices pass through unmodified."""
+        from torchtrade.envs.live.bybit.order_executor import BybitFuturesOrderClass
+
+        mock_pybit_client.get_instruments_info = MagicMock(side_effect=Exception("API down"))
+
+        executor = BybitFuturesOrderClass(
+            symbol="BTCUSDT", client=mock_pybit_client,
+        )
+        assert executor._price_precision is None
+        assert executor._round_price(82622.2122) == 82622.2122
+
     def test_get_status_with_position(self, order_executor):
         """Test getting position status."""
         status = order_executor.get_status()
@@ -452,6 +488,9 @@ class TestBybitFuturesOrderClass:
 
     def test_get_lot_size_fetches_and_caches(self, order_executor, mock_pybit_client):
         """get_lot_size must fetch from API and cache the result."""
+        # get_instruments_info is already called once during init (_fetch_price_precision)
+        init_call_count = mock_pybit_client.get_instruments_info.call_count
+
         lot_size = order_executor.get_lot_size()
         assert lot_size["min_qty"] == 0.001
         assert lot_size["qty_step"] == 0.001
@@ -459,7 +498,7 @@ class TestBybitFuturesOrderClass:
         # Second call uses cache (no additional API call)
         lot_size2 = order_executor.get_lot_size()
         assert lot_size2 is lot_size
-        mock_pybit_client.get_instruments_info.assert_called_once()
+        assert mock_pybit_client.get_instruments_info.call_count == init_call_count + 1
 
     def test_get_lot_size_fallback_on_failure(self, order_executor, mock_pybit_client):
         """get_lot_size must fall back to defaults if API fails."""

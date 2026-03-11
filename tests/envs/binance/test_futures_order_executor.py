@@ -62,6 +62,17 @@ class TestBinanceFuturesOrderClass:
         client.futures_get_open_orders = MagicMock(return_value=[])
         client.futures_cancel_all_open_orders = MagicMock(return_value={})
 
+        # Mock exchange info for price precision
+        client.futures_exchange_info = MagicMock(return_value={
+            "symbols": [{
+                "symbol": "BTCUSDT",
+                "filters": [
+                    {"filterType": "PRICE_FILTER", "tickSize": "0.10"},
+                    {"filterType": "LOT_SIZE", "stepSize": "0.001"},
+                ],
+            }]
+        })
+
         return client
 
     @pytest.fixture
@@ -131,19 +142,19 @@ class TestBinanceFuturesOrderClass:
         assert call_kwargs["side"] == "SELL"
 
     def test_limit_order(self, order_executor, mock_client):
-        """Test placing a limit order."""
+        """Test placing a limit order with price rounding."""
         success = order_executor.trade(
             side="BUY",
             quantity=0.001,
             order_type="limit",
-            limit_price=49000.0,
+            limit_price=49000.1234,
         )
 
         assert success is True
 
         call_kwargs = mock_client.futures_create_order.call_args[1]
         assert call_kwargs["type"] == "LIMIT"
-        assert call_kwargs["price"] == 49000.0
+        assert call_kwargs["price"] == 49000.1  # Rounded to 1 decimal (tick=0.10)
 
     def test_limit_order_without_price_fails(self, order_executor):
         """Test that limit order without price raises error."""
@@ -198,6 +209,49 @@ class TestBinanceFuturesOrderClass:
 
         # Should have called futures_create_order three times (main + TP + SL)
         assert mock_client.futures_create_order.call_count >= 3
+
+    @pytest.mark.parametrize("raw_price,expected_rounded", [
+        (82622.2122, 82622.2),    # BTC at ~$83k with -1% SL
+        (50000.0, 50000.0),       # Already rounded
+        (49999.99, 50000.0),      # Rounds up to nearest tick
+        (83456.78123, 83456.8),   # Many decimals
+    ])
+    def test_bracket_order_prices_rounded_to_tick_size(self, order_executor, mock_client, raw_price, expected_rounded):
+        """SL/TP prices must be rounded to exchange tick size before submission."""
+        success = order_executor.trade(
+            side="BUY",
+            quantity=0.001,
+            order_type="market",
+            take_profit=raw_price,
+            stop_loss=raw_price,
+        )
+
+        assert success is True
+
+        # Check TP order (second call) and SL order (third call)
+        calls = mock_client.futures_create_order.call_args_list
+        tp_stop_price = calls[1][1]["stopPrice"]
+        sl_stop_price = calls[2][1]["stopPrice"]
+        assert tp_stop_price == expected_rounded
+        assert sl_stop_price == expected_rounded
+
+    def test_price_precision_fetched_at_init(self, order_executor):
+        """Price precision should be determined from exchange info at init."""
+        # Tick size 0.10 -> 1 decimal place
+        assert order_executor._price_precision == 1
+
+    def test_round_price_without_precision(self, mock_client):
+        """When precision fetch fails, prices pass through unmodified."""
+        from torchtrade.envs.live.binance.order_executor import BinanceFuturesOrderClass
+
+        # Make exchange info fail
+        mock_client.futures_exchange_info = MagicMock(side_effect=Exception("API down"))
+
+        executor = BinanceFuturesOrderClass(
+            symbol="BTCUSDT", client=mock_client,
+        )
+        assert executor._price_precision is None
+        assert executor._round_price(82622.2122) == 82622.2122  # Unmodified
 
     def test_get_status(self, order_executor, mock_client):
         """Test getting account/position status."""

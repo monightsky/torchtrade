@@ -1,5 +1,6 @@
 """Order executor for Bybit Futures trading using pybit."""
 import logging
+import math
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Optional
@@ -101,6 +102,7 @@ class BybitFuturesOrderClass:
         self.position_mode = position_mode
         self.last_order_id = None
         self._lot_size_cache: Optional[Dict[str, float]] = None
+        self._price_precision: Optional[int] = None
 
         # Initialize pybit client
         if client is not None:
@@ -114,8 +116,35 @@ class BybitFuturesOrderClass:
                 api_secret=api_secret,
             )
 
-        # Setup futures account
+        # Setup futures account and fetch price precision
         self._setup_futures_account()
+        self._fetch_price_precision()
+
+    def _fetch_price_precision(self):
+        """Fetch and cache price precision from Bybit instruments info."""
+        try:
+            response = self.client.get_instruments_info(
+                category="linear", symbol=self.symbol,
+            )
+            ret_code = response.get("retCode")
+            if ret_code is not None and int(ret_code) != 0:
+                logger.warning(f"get_instruments_info failed for price precision, prices will not be rounded")
+                return
+            instruments = response.get("result", {}).get("list", [])
+            if instruments:
+                price_filter = instruments[0].get("priceFilter", {})
+                tick_size = float(price_filter.get("tickSize", 0))
+                if tick_size > 0:
+                    self._price_precision = int(round(-math.log10(tick_size)))
+                    logger.info(f"Price precision for {self.symbol}: {self._price_precision} decimals (tick={tick_size})")
+        except Exception as e:
+            logger.warning(f"Could not fetch price precision for {self.symbol}: {e}")
+
+    def _round_price(self, price: float) -> float:
+        """Round a price to the exchange's tick size precision."""
+        if self._price_precision is not None:
+            return round(price, self._price_precision)
+        return price
 
     def _calculate_unrealized_pnl_pct(self, qty: float, entry_price: float, mark_price: float) -> float:
         """Calculate unrealized PnL percentage."""
@@ -198,13 +227,13 @@ class BybitFuturesOrderClass:
             }
 
             if limit_price is not None:
-                params["price"] = str(limit_price)
+                params["price"] = str(self._round_price(limit_price))
 
             if take_profit is not None:
-                params["takeProfit"] = str(take_profit)
+                params["takeProfit"] = str(self._round_price(take_profit))
 
             if stop_loss is not None:
-                params["stopLoss"] = str(stop_loss)
+                params["stopLoss"] = str(self._round_price(stop_loss))
 
             if reduce_only:
                 params["reduceOnly"] = True
