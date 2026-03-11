@@ -18,6 +18,10 @@ class SLTPMixin:
         - self.active_take_profit: float (current TP price)
     """
 
+    # Quantities below this threshold are treated as dust (no real position).
+    # Prevents float residuals (e.g. 1e-12) from being read as open positions.
+    POSITION_DUST_EPS = 1e-9
+
     def _sync_position_from_exchange(self, position_status) -> bool:
         """Sync internal position state from exchange and detect SL/TP closures.
 
@@ -36,13 +40,14 @@ class SLTPMixin:
         """
         prev_position = self.position.current_position
 
-        if position_status is not None and position_status.qty != 0:
-            if position_status.qty > 0:
-                self.position.current_position = 1
-            else:
-                self.position.current_position = -1
-        else:
+        qty = 0.0 if position_status is None else float(position_status.qty)
+
+        if abs(qty) <= self.POSITION_DUST_EPS:
             self.position.current_position = 0
+        elif qty > 0:
+            self.position.current_position = 1
+        else:
+            self.position.current_position = -1
 
         # Detect position closure (had position, now don't)
         position_closed = (prev_position != 0 and self.position.current_position == 0)

@@ -51,6 +51,8 @@ class TestSyncPositionFromExchange:
         (-0.005, 1, -1, False),
         # Direction flip: was short, exchange shows long (external action)
         (0.005, -1, 1, False),
+        # Dust quantity treated as flat (prevents residual float artifacts)
+        (1e-12, 1, 0, True),
     ], ids=[
         "sl_tp_closes_long",
         "sl_tp_closes_short",
@@ -63,6 +65,7 @@ class TestSyncPositionFromExchange:
         "none_stays_flat",
         "direction_flip_long_to_short",
         "direction_flip_short_to_long",
+        "dust_treated_as_flat",
     ])
     def test_position_sync(self, env, exchange_qty, prev_pos, expected_pos, expected_closed):
         """Position state must sync from exchange, detecting closures and fixing drift."""
