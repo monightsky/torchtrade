@@ -114,11 +114,11 @@ class BinanceObservationClass:
             'taker_buy_quote', 'ignore'
         ])
 
-        # Convert types
+        # Convert types (pd.to_numeric handles malformed rows gracefully)
         for col in ['open', 'high', 'low', 'close', 'volume',
                      'quote_volume', 'taker_buy_base', 'taker_buy_quote']:
-            df[col] = df[col].astype(float)
-        df['trades'] = df['trades'].astype(int)
+            df[col] = pd.to_numeric(df[col], errors='coerce')
+        df['trades'] = pd.to_numeric(df['trades'], errors='coerce').fillna(0).astype(int)
         df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
         df['close_time'] = pd.to_datetime(df['close_time'], unit='ms')
 
