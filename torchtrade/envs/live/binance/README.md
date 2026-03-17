@@ -121,6 +121,43 @@ config = BinanceFuturesTradingEnvConfig(
 
 **Warning**: Higher leverage = higher liquidation risk!
 
+## Custom Feature Preprocessing
+
+The Binance observation class exposes all fields from Binance klines to your custom `feature_preprocessing_fn`. Beyond standard OHLCV, you have access to:
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `open`, `high`, `low`, `close` | float | Standard price data |
+| `volume` | float | Base asset volume |
+| `quote_volume` | float | Quote asset volume (e.g., USDT volume) |
+| `trades` | int | Number of trades in the candle |
+| `taker_buy_base` | float | Taker buy volume (base asset) |
+| `taker_buy_quote` | float | Taker buy volume (quote asset) |
+
+These extra fields allow you to derive sentiment features without additional API calls:
+
+```python
+def my_preprocessing(df):
+    df = df.copy()
+    # Taker buy ratio: proportion of volume from aggressive buyers
+    df["features_taker_buy_ratio"] = df["taker_buy_base"] / df["volume"]
+    # Quote volume change
+    df["features_quote_volume_pct"] = df["quote_volume"].pct_change().fillna(0)
+    # Average trade size
+    df["features_avg_trade_size"] = df["volume"] / df["trades"]
+    # Standard price features
+    df["features_close"] = df["close"].pct_change().fillna(0)
+    df.dropna(inplace=True)
+    return df
+
+env = BinanceFuturesTorchTradingEnv(
+    config=config,
+    feature_preprocessing_fn=my_preprocessing,
+)
+```
+
+**Note**: These extra kline fields are Binance-specific. Bitget and Bybit observation classes only expose standard OHLCV and volume through their respective APIs (CCXT and pybit).
+
 ## Funding Fees
 
 Futures have periodic funding fees:

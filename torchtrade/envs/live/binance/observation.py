@@ -115,11 +115,10 @@ class BinanceObservationClass:
         ])
 
         # Convert types
-        df['open'] = df['open'].astype(float)
-        df['high'] = df['high'].astype(float)
-        df['low'] = df['low'].astype(float)
-        df['close'] = df['close'].astype(float)
-        df['volume'] = df['volume'].astype(float)
+        for col in ['open', 'high', 'low', 'close', 'volume',
+                     'quote_volume', 'taker_buy_base', 'taker_buy_quote']:
+            df[col] = df[col].astype(float)
+        df['trades'] = df['trades'].astype(int)
         df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
         df['close_time'] = pd.to_datetime(df['close_time'], unit='ms')
 
@@ -146,7 +145,12 @@ class BinanceObservationClass:
             df["high"] = np.random.rand(window_size)
             df["low"] = np.random.rand(window_size)
             df["close"] = np.random.rand(window_size)
-            df["volume"] = np.random.rand(window_size)
+            df["volume"] = np.random.rand(window_size) + 1e-9
+            # Binance klines include extra fields beyond standard OHLCV
+            df["quote_volume"] = np.random.rand(window_size)
+            df["trades"] = np.random.randint(1, 100, window_size)
+            df["taker_buy_base"] = np.random.rand(window_size)
+            df["taker_buy_quote"] = np.random.rand(window_size)
             return df
 
         dummy_df = self.feature_preprocessing_fn(get_dummy_data(self.window_sizes[0]))
