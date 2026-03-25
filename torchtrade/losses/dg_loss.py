@@ -22,12 +22,10 @@ from tensordict import (
     TensorDictParams,
 )
 from tensordict.nn import (
-    composite_lp_aggregate,
     CompositeDistribution,
     dispatch,
     ProbabilisticTensorDictModule,
     ProbabilisticTensorDictSequential,
-    set_composite_lp_aggregate,
 )
 from tensordict.utils import NestedKey
 from torch import distributions as d
@@ -129,14 +127,6 @@ class DGLoss(LossModule):
         self.samples_mc_entropy = samples_mc_entropy
         self.reduction = reduction
         self.register_buffer("entropy_coeff", torch.tensor(float(entropy_coeff)))
-
-        if device is None:
-            try:
-                device = next(self.parameters()).device
-            except (AttributeError, StopIteration):
-                device = getattr(
-                    torch, "get_default_device", lambda: torch.device("cpu")
-                )()
 
         try:
             action_keys = self.actor_network.dist_sample_keys
