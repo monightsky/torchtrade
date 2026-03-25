@@ -150,6 +150,8 @@ class DGLoss(LossModule):
         _maybe_add_or_extend_key(keys, self.actor_network.in_keys)
         _maybe_add_or_extend_key(keys, self.tensor_keys.action)
         _maybe_add_or_extend_key(keys, self.tensor_keys.reward, "next")
+        if self.baseline_type == "expected":
+            _maybe_add_or_extend_key(keys, "counterfactual_rewards")
         self._in_keys = list(dict.fromkeys(keys))
 
     @property
