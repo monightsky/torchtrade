@@ -329,6 +329,11 @@ class SequentialTradingEnvSLTP(SequentialTradingEnv):
         """
         self.step_counter += 1
 
+        # Guard: if sampler was exhausted in the previous step, terminate
+        # gracefully instead of letting get_sequential_observation() raise.
+        if self.truncated:
+            return self._build_exhaustion_response()
+
         # Bar N price — where the agent's action would execute
         cached_price = self._cached_base_features["close"]
 

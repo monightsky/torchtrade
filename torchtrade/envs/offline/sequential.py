@@ -460,9 +460,51 @@ class SequentialTradingEnv(TorchTradeOfflineEnv):
         self.liquidation_price = 0.0
         self._prev_action_value = None
 
+    def _build_exhaustion_response(self) -> TensorDictBase:
+        """Build terminal response when sampler is already exhausted.
+
+        Called when self.truncated is True at the start of _step(), meaning
+        the sampler ran out of data in the previous step. Returns done=True
+        without advancing the sampler.
+        """
+        price = self._cached_base_features["close"]
+        portfolio_value = self._get_portfolio_value(price)
+
+        # Re-fetch observation from last timestamp (doesn't use sequential index)
+        obs_dict = self.sampler.get_observation(self.current_timestamp)
+        next_tensordict = self._build_observation_from_data(obs_dict, self._cached_base_features)
+
+        # Record a hold step so the reward function sees the final state
+        self.history.record_step(
+            price=price,
+            action=0.0,
+            reward=0.0,
+            portfolio_value=portfolio_value,
+            position=self.position.position_size,
+            action_type="hold",
+        )
+        reward = float(self.reward_function(self.history))
+        self.history.rewards[-1] = reward
+
+        if self.random_start:
+            next_tensordict.set("reset_index", torch.tensor(self._reset_idx, dtype=torch.long))
+            next_tensordict.set("state_index", torch.tensor(self.sampler._sequential_idx, dtype=torch.long))
+
+        next_tensordict.set("reward", torch.tensor([reward], dtype=torch.float))
+        next_tensordict.set("terminated", torch.tensor([False], dtype=torch.bool))
+        next_tensordict.set("truncated", torch.tensor([True], dtype=torch.bool))
+        next_tensordict.set("done", torch.tensor([True], dtype=torch.bool))
+
+        return next_tensordict
+
     def _step(self, tensordict: TensorDictBase) -> TensorDictBase:
         """Execute one environment step."""
         self.step_counter += 1
+
+        # Guard: if sampler was exhausted in the previous step, terminate
+        # gracefully instead of letting get_sequential_observation() raise.
+        if self.truncated:
+            return self._build_exhaustion_response()
 
         # Cache base features and get current price
         cached_price = self._cached_base_features["close"]
