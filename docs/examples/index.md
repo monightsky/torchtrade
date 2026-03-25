@@ -321,6 +321,27 @@ Combine with **[custom feature preprocessing](../guides/custom-features.md)** to
 !!! note "Future Work"
     Hybrid approaches that combine rule-based policies with neural network policies as actors, leveraging the strengths of both deterministic strategies and learned behaviors.
 
+### Loss Function Examples
+
+Standalone scripts that compare TorchTrade's custom loss functions against baselines on simple tasks, useful for sanity checking and understanding each loss.
+
+Located in `examples/losses/`:
+
+| Example | Loss | Description |
+|---------|------|-------------|
+| **dg_mnist.py** | [DGLoss](../components/losses.md#dgloss) | Compares CE, REINFORCE, and DG on MNIST-as-bandit. Plots test error, training loss, and gate dynamics. |
+
+```bash
+# Run with defaults (5 epochs, eta=1.0, mean baseline)
+python examples/losses/dg_mnist.py
+
+# Sweep eta temperature
+python examples/losses/dg_mnist.py --eta 0.3
+
+# Skip plotting
+python examples/losses/dg_mnist.py --no-plot
+```
+
 ### Live Trading
 
 The DQN and PPO examples include a `live.py` script alongside the `train.py` script, demonstrating the smooth transition from offline backtesting to live trading. The same model architecture and `utils.py` helpers are reused — only the environment changes from an offline `SequentialTradingEnv` to a live exchange environment. This mirrors the core design philosophy: **swap the environment, keep everything else the same.**
