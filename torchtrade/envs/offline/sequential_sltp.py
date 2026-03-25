@@ -329,6 +329,11 @@ class SequentialTradingEnvSLTP(SequentialTradingEnv):
         """
         self.step_counter += 1
 
+        # Guard: if sampler was exhausted in the previous step, terminate
+        # gracefully instead of letting get_sequential_observation() raise.
+        if self.truncated:
+            return self._build_exhaustion_response()
+
         # Bar N price — where the agent's action would execute
         cached_price = self._cached_base_features["close"]
 
@@ -381,8 +386,9 @@ class SequentialTradingEnvSLTP(SequentialTradingEnv):
 
         # Add coverage tracking indices (only during training with random_start)
         if self.random_start:
+            self._last_state_index = self.sampler._sequential_idx
             next_tensordict.set("reset_index", torch.tensor(self._reset_idx, dtype=torch.long))
-            next_tensordict.set("state_index", torch.tensor(self.sampler._sequential_idx, dtype=torch.long))
+            next_tensordict.set("state_index", torch.tensor(self._last_state_index, dtype=torch.long))
 
         # Determine action_type and binarize action for history
         action_type = trade_info.get("side") or "hold"
