@@ -184,21 +184,30 @@ class BaseLLMActor(ABC):
             market_data_1Hour_24   -> 1H(24)
             market_data_5Minute_12 -> 5M(12)
             market_data_1Day_30    -> 1D(30)
+
+        Falls back to returning the key unchanged if it doesn't match the
+        expected ``market_data_{value}{Unit}_{window}`` pattern.
         """
-        # Expected format: market_data_{value}{Unit}_{window}
-        parts = key.split("_")  # ["market", "data", "1Hour", "24"]
-        timeframe_part = parts[2]  # e.g. "1Hour", "5Minute"
-        window = parts[3]
+        try:
+            # Expected format: market_data_{value}{Unit}_{window}
+            parts = key.split("_")  # ["market", "data", "1Hour", "24"]
+            timeframe_part = parts[2]  # e.g. "1Hour", "5Minute"
+            window = parts[3]
 
-        # Extract numeric prefix and unit name
-        i = 0
-        while i < len(timeframe_part) and (timeframe_part[i].isdigit()):
-            i += 1
-        value = timeframe_part[:i]
-        unit = timeframe_part[i:]  # e.g. "Hour", "Minute", "Day"
+            # Extract numeric prefix and unit name
+            i = 0
+            while i < len(timeframe_part) and (timeframe_part[i].isdigit()):
+                i += 1
+            value = timeframe_part[:i]
+            unit = timeframe_part[i:]  # e.g. "Hour", "Minute", "Day"
 
-        unit_abbrev = unit[0].upper()  # H, M, D
-        return f"{value}{unit_abbrev}({window})"
+            if not unit:
+                return key
+
+            unit_abbrev = unit[0].upper()  # H, M, D
+            return f"{value}{unit_abbrev}({window})"
+        except (IndexError, ValueError):
+            return key
 
     @classmethod
     def _abbreviate_feature(cls, name: str) -> str:
